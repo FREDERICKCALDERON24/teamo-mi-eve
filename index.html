@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Te amo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #000;
+      font-family: 'Segoe UI', sans-serif;
+    }
+    canvas {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100vw;
+      height: 100vh;
+      z-index: 0;
+    }
+    .mensaje {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      z-index: 2;
+      text-align: center;
+      gap: 0.5rem;
+      padding: 1rem;
+    }
+    .mensaje .linea {
+      
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+    .mensaje span {
+      color: #fff;
+      font-size: clamp(2rem, 6vw, 4rem);
+      font-weight: bold;
+      letter-spacing: 0.1em;
+      text-shadow:
+        0 2px 24px #ff0043,
+        0 0 16px #fff,
+        0 0 8px #ff0043,
+        0 0 2px #fff;
+      transition: transform 0.3s;
+    }
+    .mensaje span:hover {
+      transform: scale(1.15);
+    }
+    .foto {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100vw;
+      height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      pointer-events: none;
+      z-index: 1;
+    }
+    .foto img {
+      max-width: 80vw;
+      max-height: 80vh;
+      border-radius: 1rem;
+      box-shadow: 0 0 32px rgba(255,255,255,0.6);
+      opacity: 0;
+      animation: fadeInOut 3s ease-in-out;
+    }
+    @keyframes fadeInOut {
+      0% { opacity: 0; transform: scale(0.5); }
+      20% { opacity: 1; transform: scale(1); }
+      80% { opacity: 1; transform: scale(1); }
+      100% { opacity: 0; transform: scale(0.5); }
+    }
+    @media (max-width: 768px) {
+      .mensaje span {
+        font-size: clamp(1.5rem, 8vw, 3rem);
+      }
+    }
+  </style>
+</head>
+<body>
+  <canvas id="bg-canvas"></canvas>
+  <div class="mensaje">
+    <div class="linea">
+      <span>F</span><span>E</span><span>L</span><span>I</span><span>Z</span><span>&nbsp;</span>
+      <span>1</span><span>3</span><span>&nbsp;</span>
+      <span>M</span><span>E</span><span>S</span><span>E</span><span>S</span>
+    </div>
+    <div class="linea">
+      <span>M</span><span>I</span><span>&nbsp;</span>
+      <span>O</span><span>S</span><span>I</span><span>T</span><span>A</span>
+    </div>
+    <div class="linea">
+      <span>A</span><span>M</span><span>O</span><span>R</span><span>O</span><span>S</span><span>A</span> <span>🐻</span><span>🐻</span>
+    </div>
+    <div class="linea">
+      <span>T</span><span>E</span><span>&nbsp;</span><span>A</span><span>M</span><span>O</span><span>O</span>
+    </div>
+  </div>
+  <div class="foto" id="foto-container">
+  </div>
+  <script>
+    const canvas = document.getElementById('bg-canvas');
+    const ctx = canvas.getContext('2d');
+    let W = window.innerWidth, H = window.innerHeight;
+    canvas.width = W; canvas.height = H;
+
+    window.addEventListener('resize', () => {
+      W = window.innerWidth; H = window.innerHeight;
+      canvas.width = W; canvas.height = H;
+    });
+
+    function randomColor() {
+      const colors = ['#ff0043', '#14fc56', '#1e90ff', '#fff200', '#ff7f00', '#ff00ff'];
+      return colors[Math.floor(Math.random() * colors.length)];
+    }
+
+    class Firework {
+      constructor() {
+        this.x = Math.random() * W;
+        this.y = H;
+        this.targetY = 100 + Math.random() * (H / 2);
+        this.color = randomColor();
+        this.particles = [];
+        this.exploded = false;
+      }
+      update() {
+        if (!this.exploded) {
+          this.y -= 8;
+          if (this.y <= this.targetY) {
+            this.exploded = true;
+            for (let i = 0; i < 40; i++) {
+              const angle = Math.random() * 2 * Math.PI;
+              const speed = Math.random() * 4 + 2;
+              this.particles.push({
+                x: this.x,
+                y: this.y,
+                vx: Math.cos(angle) * speed,
+                vy: Math.sin(angle) * speed,
+                alpha: 1
+              });
+            }
+            showRandomPhoto(this.x, this.y);
+          }
+        } else {
+          this.particles.forEach(p => {
+            p.x += p.vx;
+            p.y += p.vy;
+            p.vy += 0.05;
+            p.alpha -= 0.015;
+          });
+          this.particles = this.particles.filter(p => p.alpha > 0);
+        }
+      }
+      draw(ctx) {
+        if (!this.exploded) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(this.x, this.y, 3, 0, 2 * Math.PI);
+          ctx.fillStyle = this.color;
+          ctx.shadowColor = this.color;
+          ctx.shadowBlur = 10;
+          ctx.fill();
+          ctx.restore();
+        } else {
+          this.particles.forEach(p => {
+            ctx.save();
+            ctx.globalAlpha = p.alpha;
+            ctx.beginPath();
+            ctx.arc(p.x, p.y, 2, 0, 2 * Math.PI);
+            ctx.fillStyle = this.color;
+            ctx.shadowColor = this.color;
+            ctx.shadowBlur = 8;
+            ctx.fill();
+            ctx.restore();
+          });
+        }
+      }
+      done() {
+        return this.exploded && this.particles.length === 0;
+      }
+    }
+
+    let fireworks = [];
+    function animate() {
+      ctx.globalAlpha = 0.2;
+      ctx.fillStyle = "#000";
+      ctx.fillRect(0, 0, W, H);
+      ctx.globalAlpha = 1;
+
+      if (Math.random() < 0.03) {
+        fireworks.push(new Firework());
+      }
+
+      fireworks.forEach(f => {
+        f.update();
+        f.draw(ctx);
+      });
+      fireworks = fireworks.filter(f => !f.done());
+
+      requestAnimationFrame(animate);
+    }
+
+    function showRandomPhoto(x, y) {
+      const container = document.getElementById("foto-container");
+      const img = document.createElement("img");
+      const index = Math.floor(Math.random() * 53) + 1;
+      img.src = `img/${index}.jpg`;
+      img.style.position = "absolute";
+      img.style.left = `${x}px`;
+      img.style.top = `${y}px`;
+      img.style.width = "100px";
+      container.appendChild(img);
+      setTimeout(() => img.remove(), 3000);
+    }
+
+    animate();
+  </script>
+</body>
+</html>
